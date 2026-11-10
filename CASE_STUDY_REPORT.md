@@ -9,7 +9,7 @@ Voice-based virtual assistants allow users to interact with computers using natu
 
 The assistant follows a modular five-stage client–server architecture. Because a remote cloud server cannot directly control a visitor's local desktop OS, the backend (`app.py`) uses a **Dual-Mode Execution** design:
 - **Local Windows Mode (`local_windows`)**: Runs on a Windows host and directly controls system volume and whitelisted desktop apps.
-- **Cloud Demo Mode (`cloud_demo`)**: When deployed publicly on a Linux container (Hugging Face Spaces / Render), browser actions (YouTube, Google, searches) execute live in the visitor's browser, while desktop-only commands run in safe simulation mode.
+- **Cloud Demo Mode (`cloud_demo`)**: When deployed publicly on a Linux server (e.g., Render), browser actions (YouTube, Google, searches) execute live in the visitor's browser, while desktop-only commands run in safe simulation mode.
 
 ```mermaid
 flowchart LR
@@ -53,7 +53,7 @@ Raw ASR transcripts must be mapped to actionable commands and parameters. The `I
 - **Speech Synthesis**: `synthesize_speech()` converts the assistant's confirmation message into spoken MP3 audio using **gTTS (Google Text-to-Speech)**, returning base64-encoded audio played automatically inside the browser's `<audio>` element. Measured TTS synthesis latency ranged between **261.7 ms and 679.7 ms**.
 - **Task Execution**:
   - **Web Tasks**: Constructs safe target URLs (e.g., `https://www.youtube.com`, `https://www.youtube.com/results?search_query=...`, `https://www.google.com/search?q=...`) and opens them in a new browser tab with a visible fallback link button in case of browser popup blockers.
-  - **Windows OS Tasks**: Uses an explicit safe dictionary (`WINDOWS_APPS`) rather than arbitrary shell execution, launching apps via `os.startfile()` / `subprocess.Popen()` (`Notepad`, `Calculator`, `Paint`, `Command Prompt`, `File Explorer`, `Task Manager`, `Control Panel`, `Snipping Tool`, `Settings`, `Chrome`, `Edge`) and controlling Windows master volume via `pycaw` Core Audio COM interfaces (`IAudioEndpointVolume` with `comtypes.CoInitialize()`).
+  - **Windows OS Tasks**: Uses an explicit safe dictionary (`WINDOWS_APPS`) rather than arbitrary shell execution, launching apps visibly via `ShellExecuteW(..., 1)` (`SW_SHOWNORMAL`) / `subprocess.Popen()` (`Notepad`, `Calculator`, `Paint`, `Command Prompt`, `File Explorer`, `Task Manager`, `Control Panel`, `Snipping Tool`, `Settings`, `Chrome`, `Edge`) and controlling Windows master volume via `pycaw` Core Audio COM interfaces (`IAudioEndpointVolume` with `comtypes.CoInitialize()`).
 
 ### 3.5 Word Error Rate (WER) Evaluation (`modules/wer_evaluator.py`)
 Word Error Rate is the standard metric for evaluating speech recognition accuracy:
@@ -105,7 +105,7 @@ To benchmark the full pipeline reproducibly, `tests/run_benchmark.py` generated 
 ---
 
 ## 5. Automated Verification
-The project includes 17 automated unit and integration tests (`tests/test_pipeline.py`) covering WAV analysis, TF-IDF intent & entity extraction, Levenshtein WER math, simulated Windows execution, and FastAPI HTTP routes—all passing in 1.66 seconds.
+The project includes 19 automated unit and integration tests (`tests/test_pipeline.py`) covering WAV analysis, TF-IDF intent & entity extraction (including split-word ASR aliases), Levenshtein WER math, simulated Windows execution, and FastAPI HTTP routes—all passing cleanly.
 
 ---
 

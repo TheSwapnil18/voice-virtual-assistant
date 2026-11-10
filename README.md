@@ -1,51 +1,63 @@
 # Voice-Based Virtual Assistant (Case Study Project)
 
-A small, clean, college-level voice assistant built with Python and FastAPI that demonstrates the complete speech pipeline in a transparent UI:
-
-1. **Audio Input** (`modules/audio_input.py`) — Captures 16 kHz, 16-bit mono PCM `.wav` directly in the browser (zero `ffmpeg` needed) and measures duration, RMS loudness, dBFS, and waveform peaks.
-2. **Speech Recognition / ASR** (`modules/speech_recognition.py`) — Transcribes spoken WAV audio into text via `SpeechRecognition` (Google Web Speech backend) and records latency.
-3. **Natural Language Processing / NLP** (`modules/nlp_processor.py`) — Uses TF-IDF vectorization + Cosine Similarity against `data/intents.json` along with regex/keyword slot extraction to classify intents and extract websites, apps, search queries, and volume percentages.
-4. **Speech Synthesis / TTS & Execution** (`modules/speech_synthesis.py`, `modules/task_executor.py`) — Generates spoken MP3 replies via `gTTS` and performs browser tasks (YouTube, Google, Wikipedia, etc.) plus real Windows OS tasks (Notepad, Calculator, Paint, Chrome, Volume Up/Down/Mute/Set) when running locally on Windows.
-5. **Word Error Rate / WER Lab** (`modules/wer_evaluator.py`) — Implements word-level Levenshtein dynamic programming to calculate Substitutions ($S$), Deletions ($D$), Insertions ($I$), Reference Words ($N$), and $\text{WER} = \frac{S + D + I}{N}$, with visual word alignment and CSV export.
+A small, clean, college-level voice virtual assistant built with Python and FastAPI, featuring a minimal Gemini-style interface and built-in metrics for **Audio Input**, **Speech Recognition**, **Language Processing**, **Speech Synthesis**, and **Word Error Rate (WER)**.
 
 ---
 
 ## Project Structure
 
 ```text
-NLP CS/
-├── app.py                   # FastAPI web server & REST endpoints
-├── data/intents.json        # Small training dataset of voice command examples
+.
+├── app.py                   # FastAPI web server & REST API
+├── data/
+│   └── intents.json         # Training phrases for NLP intent matching
 ├── modules/
+│   ├── __init__.py
 │   ├── audio_input.py       # WAV parsing, loudness (dBFS), waveform peaks
-│   ├── speech_recognition.py# Audio-to-text transcription
-│   ├── nlp_processor.py     # TF-IDF intent matching + slot extraction
+│   ├── speech_recognition.py# Speech-to-text transcription (Google STT)
+│   ├── nlp_processor.py     # TF-IDF cosine similarity + slot extraction
 │   ├── speech_synthesis.py  # Text-to-speech MP3 generation (gTTS)
-│   ├── task_executor.py     # Web URL builder & Windows apps/volume control
-│   └── wer_evaluator.py     # Dynamic programming WER & alignment
-├── static/index.html        # Clean, non-technical friendly web interface
+│   ├── task_executor.py     # Web URL builder & Windows app/volume control
+│   └── wer_evaluator.py     # Levenshtein Word Error Rate (S, D, I, N)
+├── static/
+│   └── index.html           # Clean, minimal Gemini-style assistant UI + WER modal
 ├── tests/
 │   ├── test_pipeline.py     # Automated unit & API tests
 │   └── run_benchmark.py     # Reproducible clean vs noisy WER benchmark
 ├── CASE_STUDY_REPORT.md     # Complete academic case study report
 ├── start_assistant.bat      # One-click Windows launcher
-├── .python-version          # Pins Python 3.11.11 for cloud deployment (Render)
+├── .python-version          # Pins Python 3.11.11 for Render deployment
+├── .gitignore               # Excludes .venv, caches, and generated files
 └── requirements.txt         # Cross-platform dependencies
 ```
 
 ---
 
-## How to Run Locally on Windows
+## What It Can Do
 
-> **Note:** Python 3.11 is recommended (especially for `SpeechRecognition`, since Python 3.13+ removed `aifc`/`audioop`).
+- **Open Websites:** *"open youtube"*, *"open google"*, *"open wikipedia"*, *"open github"*, or any `.com`/`.org`/`.in` domain.
+- **Search YouTube & Google:** *"search youtube for lo-fi music"*, *"search google for word error rate"*.
+- **Open Windows Apps (Local Windows Mode):** Notepad, Calculator, Paint, Command Prompt, File Explorer, Task Manager, Control Panel, Snipping Tool, Settings, Clock, Chrome, Edge.
+- **Control Windows Volume (Local Windows Mode):** *"volume up"*, *"volume down"*, *"set volume to 50 percent"*, *"mute"*, *"unmute"*.
+- **Case Study Inspection:** Click **`View pipeline details ▾`** under any assistant reply to inspect Audio, ASR, NLP, and TTS metrics, or click **`📊 WER Check`** in the top bar to evaluate Word Error Rate and export CSV logs.
 
-Double-click `start_assistant.bat`, or run in PowerShell:
+---
 
+## Run Locally on Windows
+
+> **Note:** Python 3.11 is recommended (`SpeechRecognition` uses modules removed in Python 3.13+).
+
+If you cloned this repository fresh:
+```powershell
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt
+```
+
+Then double-click **`start_assistant.bat`** (recommended on Windows so apps like Notepad open visibly on your desktop), or run:
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
-
-Then open **http://127.0.0.1:8000** in Chrome or Edge.
+Open **http://127.0.0.1:8000** in Chrome or Edge.
 
 ### Run Tests & WER Benchmark
 ```powershell
@@ -55,27 +67,14 @@ Then open **http://127.0.0.1:8000** in Chrome or Edge.
 
 ---
 
-## How to Create Your Global Link (100% Free, No Docker Needed)
+## Deploy a Free Global Link (Render — No Docker Needed)
 
-### Option 1: Free Permanent Link on Render (Native Python 3)
-1. Upload all project files (except `.venv/`, `__pycache__/`, and `.pytest_cache/`) to a GitHub repository. (`.python-version` pins Python `3.11.11` automatically.)
-2. Go to [render.com](https://render.com), log in with GitHub, and click **New → Web Service**.
-3. Select your repository and configure:
-   - **Language / Runtime:** `Python 3` (not Docker)
+1. Push this repository to GitHub (`.gitignore` excludes `.venv/` and caches automatically).
+2. On [render.com](https://render.com), click **New + → Web Service** and select your GitHub repo.
+3. Configure:
+   - **Language:** `Python 3`
    - **Build Command:** `pip install -r requirements.txt`
    - **Start Command:** `uvicorn app:app --host 0.0.0.0 --port $PORT`
-   - **Instance Type:** `Free`
-4. Click **Deploy Web Service**. You get a permanent HTTPS link like `https://voice-assistant-xxxx.onrender.com`.
-   - Web commands (`Open YouTube`, `Search YouTube`, `Open Google`), voice ASR, NLP, TTS, and WER Check work live for everyone.
-   - Windows-only commands (`Open Notepad`, `Volume Up`) automatically show **Cloud Demo** simulation mode.
-   *(Note: Render's free tier sleeps after 15 minutes of inactivity and wakes in ~30–50 seconds on the first visit.)*
-
-### Option 2: Instant Free Global Link Controlling Your Windows PC (Live Presentation)
-If you want your global URL to open real apps and change volume on your Windows laptop during a live demo (no GitHub or Docker needed):
-1. Double-click `start_assistant.bat` so the assistant is running on `http://127.0.0.1:8000`.
-2. Install Cloudflare Tunnel once: `winget install Cloudflare.cloudflared`
-3. In a new terminal, run:
-   ```powershell
-   cloudflared tunnel --url http://127.0.0.1:8000
-   ```
-4. Share the generated `https://*.trycloudflare.com` URL (HTTPS enables browser microphone access from anywhere).
+   - **Instance Type:** **Free**
+4. Click **Deploy Web Service** to get your live HTTPS link (`https://<your-app>.onrender.com`).
+   - Web tasks, voice ASR, NLP, TTS, and the WER Check work live on the cloud link; Windows-only desktop actions show **Cloud Demo** simulation mode.
