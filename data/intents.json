@@ -1,0 +1,160 @@
+{
+  "intents": [
+    {
+      "tag": "open_website",
+      "description": "Open a website in the browser (e.g., YouTube, Google, Wikipedia)",
+      "examples": [
+        "open youtube",
+        "go to youtube",
+        "launch youtube",
+        "open google",
+        "open wikipedia",
+        "visit github",
+        "open gmail",
+        "open spotify",
+        "open chatgpt",
+        "open instagram",
+        "open maps",
+        "open website"
+      ]
+    },
+    {
+      "tag": "search_youtube",
+      "description": "Search or play something on YouTube",
+      "examples": [
+        "search youtube for lofi music",
+        "play python tutorial on youtube",
+        "search on youtube for machine learning",
+        "find relaxing music on youtube",
+        "look up news on youtube",
+        "youtube search cricket highlights",
+        "play songs on youtube"
+      ]
+    },
+    {
+      "tag": "search_google",
+      "description": "Search the web using Google",
+      "examples": [
+        "search google for weather today",
+        "google natural language processing",
+        "search for python documentation",
+        "look up word error rate formula",
+        "search the web for latest news",
+        "find information about speech recognition"
+      ]
+    },
+    {
+      "tag": "open_app",
+      "description": "Open a common Windows application",
+      "examples": [
+        "open notepad",
+        "launch calculator",
+        "open calc",
+        "start paint",
+        "open file explorer",
+        "open command prompt",
+        "open terminal",
+        "open chrome",
+        "open microsoft edge",
+        "open task manager",
+        "open windows settings",
+        "open control panel",
+        "open snipping tool"
+      ]
+    },
+    {
+      "tag": "volume_up",
+      "description": "Increase system speaker volume",
+      "examples": [
+        "volume up",
+        "increase volume",
+        "turn up the volume",
+        "raise the volume",
+        "make it louder",
+        "increase the sound",
+        "turn sound up"
+      ]
+    },
+    {
+      "tag": "volume_down",
+      "description": "Decrease system speaker volume",
+      "examples": [
+        "volume down",
+        "decrease volume",
+        "turn down the volume",
+        "lower the volume",
+        "make it quieter",
+        "reduce the sound",
+        "turn sound down"
+      ]
+    },
+    {
+      "tag": "volume_set",
+      "description": "Set system volume to a specific percentage",
+      "examples": [
+        "set volume to 50 percent",
+        "change volume to 30",
+        "put volume at 80 percent",
+        "set sound to 20 percent",
+        "volume 60 percent",
+        "adjust volume to 40"
+      ]
+    },
+    {
+      "tag": "volume_mute",
+      "description": "Mute system audio",
+      "examples": [
+        "mute",
+        "mute volume",
+        "mute the audio",
+        "turn off sound",
+        "silence the speakers"
+      ]
+    },
+    {
+      "tag": "volume_unmute",
+      "description": "Unmute system audio",
+      "examples": [
+        "unmute",
+        "unmute volume",
+        "turn sound back on",
+        "restore audio",
+        "unmute speakers"
+      ]
+    },
+    {
+      "tag": "get_time",
+      "description": "Tell the current date and time",
+      "examples": [
+        "what time is it",
+        "tell me the current time",
+        "what is today date",
+        "check the time",
+        "current time and date"
+      ]
+    },
+    {
+      "tag": "greeting",
+      "description": "Friendly greeting",
+      "examples": [
+        "hello",
+        "hi",
+        "hey assistant",
+        "good morning",
+        "good evening",
+        "how are you"
+      ]
+    },
+    {
+      "tag": "help",
+      "description": "List supported voice commands",
+      "examples": [
+        "help",
+        "what can you do",
+        "show commands",
+        "how does this work",
+        "list features"
+      ]
+    }
+  ]
+}

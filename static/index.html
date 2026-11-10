@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voice Assistant</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f0f4f9;
+      --surface-hover: #e4eaf3;
+      --border: #e1e6ed;
+      --text: #1f1f1f;
+      --muted: #5f6368;
+      --accent: #1a73e8;
+      --accent-soft: #e8f0fe;
+      --danger: #d93025;
+      --success: #188038;
+      --success-bg: #e6f4ea;
+      --amber: #b06000;
+      --amber-bg: #fef7e0;
+      --red-bg: #fce8e6;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+    }
+
+    /* Minimal Top Bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .sparkle {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570);
+      color: #fff;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .mode-tag {
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+    }
+
+    .mode-tag.local {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill-btn {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 6px 13px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .pill-btn:hover { background: var(--surface); }
+
+    /* Center Scrollable Area */
+    .main-scroll {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 16px 24px;
+    }
+
+    .center-col {
+      width: 100%;
+      max-width: 760px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Gemini-like Welcome State */
+    .welcome {
+      margin: auto 0;
+      padding: 24px 8px;
+    }
+
+    .welcome h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.9rem, 4vw, 2.7rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #1a73e8, #7b5cd6, #d96570);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .welcome p {
+      margin: 0 0 28px;
+      font-size: 1.05rem;
+      color: var(--muted);
+    }
+
+    .suggestions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+    }
+
+    .suggestion-card {
+      text-align: left;
+      border: none;
+      background: var(--surface);
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+      line-height: 1.35;
+    }
+
+    .suggestion-card:hover { background: var(--surface-hover); }
+    .suggestion-card span {
+      display: block;
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+    }
+
+    /* Chat Messages */
+    .messages {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-top: 8px;
+    }
+
+    .msg-user {
+      align-self: flex-end;
+      background: var(--surface);
+      padding: 11px 18px;
+      border-radius: 20px 20px 4px 20px;
+      max-width: 82%;
+      font-size: 0.98rem;
+    }
+
+    .msg-assistant {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      max-width: 94%;
+    }
+
+    .msg-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .reply-text {
+      font-size: 1rem;
+      line-height: 1.55;
+      margin: 2px 0 10px;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 13px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      background: var(--surface);
+      color: var(--text);
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .action-chip.link {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .action-chip.link:hover { background: #d2e3fc; }
+
+    .action-chip.ok {
+      background: var(--success-bg);
+      color: var(--success);
+      cursor: default;
+    }
+
+    .action-chip.sim {
+      background: var(--amber-bg);
+      color: var(--amber);
+      cursor: default;
+    }
+
+    .details-toggle {
+      margin-top: 8px;
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .details-toggle:hover { color: var(--text); }
+
+    .pipeline-details {
+      margin-top: 8px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: var(--surface);
+      font-size: 0.83rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .pipeline-details strong { color: var(--text); }
+
+    /* Gemini Floating Input Dock */
+    .input-dock {
+      padding: 8px 16px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .input-pill {
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid transparent;
+      border-radius: 28px;
+      padding: 6px 8px 6px 18px;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .input-pill:focus-within {
+      background: #fff;
+      border-color: var(--border);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .input-pill input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 1rem;
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+      padding: 8px 0;
+    }
+
+    .accent-select {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      padding: 6px 4px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text);
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .icon-btn:hover { background: rgba(0, 0, 0, 0.06); }
+
+    .icon-btn.recording {
+      background: var(--danger);
+      color: #fff;
+      width: auto;
+      padding: 0 14px;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      gap: 6px;
+      animation: pulse 1.2s infinite;
+    }
+
+    .icon-btn.send {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .icon-btn.send:hover { background: #1558b0; }
+    .icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(217, 48, 37, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(217, 48, 37, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(217, 48, 37, 0); }
+    }
+
+    .helper-caption {
+      margin-top: 6px;
+      font-size: 0.76rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* Clean Modal for WER Evaluation */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 680px;
+      max-height: 90dvh;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.92rem;
+    }
+
+    .wer-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .metric {
+      background: var(--surface);
+      padding: 9px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .metric strong { display: block; font-size: 1.15rem; }
+    .metric span { font-size: 0.74rem; color: var(--muted); }
+
+    .tokens {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 10px 0;
+    }
+
+    .tok {
+      padding: 4px 9px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    .op-match { background: var(--success-bg); color: var(--success); }
+    .op-sub { background: var(--amber-bg); color: var(--amber); }
+    .op-del { background: var(--red-bg); color: var(--danger); text-decoration: line-through; }
+    .op-ins { background: var(--accent-soft); color: var(--accent); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="sparkle">✦</span>
+        <span>Voice Assistant</span>
+        <span id="modeTag" class="mode-tag">Connecting...</span>
+      </div>
+      <div class="top-actions">
+        <button id="openWerBtn" class="pill-btn" type="button">📊 WER Check</button>
+        <button id="clearBtn" class="pill-btn" type="button">New chat</button>
+      </div>
+    </header>
+
+    <main id="mainScroll" class="main-scroll">
+      <div class="center-col">
+        <!-- Welcome screen (shown initially) -->
+        <div id="welcomeView" class="welcome">
+          <h1>Hello, how can I help?</h1>
+          <p>Speak or type a command — open YouTube, search the web, launch Windows apps, or adjust volume.</p>
+          <div class="suggestions">
+            <button class="suggestion-card" data-cmd="open youtube"><span>▶</span>Open YouTube</button>
+            <button class="suggestion-card" data-cmd="open notepad"><span>📝</span>Open Notepad</button>
+            <button class="suggestion-card" data-cmd="volume up"><span>🔊</span>Increase volume</button>
+            <button class="suggestion-card" data-cmd="search youtube for lo-fi music"><span>🔍</span>Search YouTube for lo-fi music</button>
+          </div>
+        </div>
+
+        <!-- Conversation messages -->
+        <div id="messagesList" class="messages hidden"></div>
+      </div>
+    </main>
+
+    <footer class="input-dock">
+      <form id="chatForm" class="input-pill">
+        <input id="cmdInput" type="text" placeholder="Ask or type a command..." autocomplete="off" />
+        <select id="accentSelect" class="accent-select" title="Speech accent">
+          <option value="en-US">US</option>
+          <option value="en-IN">IN</option>
+          <option value="en-GB">UK</option>
+        </select>
+        <button id="micBtn" class="icon-btn" type="button" title="Speak command">🎤</button>
+        <button id="sendBtn" class="icon-btn send" type="submit" title="Send">↑</button>
+      </form>
+      <div id="statusNote" class="helper-caption">Click 🎤 to speak or type a command.</div>
+    </footer>
+  </div>
+
+  <!-- Minimal WER Evaluation Modal -->
+  <div id="werModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Word Error Rate (WER) Check</h2>
+        <button id="closeWerBtn" class="pill-btn" type="button">Close</button>
+      </div>
+      <p style="margin:0 0 12px; font-size:0.86rem; color:var(--muted);">
+        <code>WER = (Wrong [S] + Missing [D] + Extra [I]) ÷ Total Reference Words [N]</code>
+      </p>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="werPhraseSelect">Sample Phrase</label>
+          <select id="werPhraseSelect"><option value="">-- Optional test phrase --</option></select>
+        </div>
+        <div class="field">
+          <label for="werCondition">Condition</label>
+          <select id="werCondition">
+            <option value="Quiet Room">Quiet Room</option>
+            <option value="Background Noise">Background Noise</option>
+            <option value="Fast Speech">Fast Speech</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="werRef">What You Said (Reference)</label>
+          <input id="werRef" type="text" placeholder="e.g., open notepad" />
+        </div>
+        <div class="field">
+          <label for="werHyp">What Assistant Heard (Hypothesis)</label>
+          <input id="werHyp" type="text" placeholder="Auto-filled from voice..." />
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="calcWerBtn" class="pill-btn" style="background:var(--accent); color:#fff; border-color:var(--accent);" type="button">Calculate WER</button>
+        <button id="saveWerBtn" class="pill-btn" type="button">Save to Log</button>
+        <button id="csvBtn" class="pill-btn" type="button">Download CSV</button>
+      </div>
+
+      <div id="werResultBox" class="hidden">
+        <div class="wer-metrics">
+          <div class="metric"><strong id="werPct">0%</strong><span>WER</span></div>
+          <div class="metric"><strong id="werAcc">100%</strong><span>Accuracy</span></div>
+          <div class="metric"><strong id="werS">0</strong><span>Wrong (S)</span></div>
+          <div class="metric"><strong id="werD">0</strong><span>Missed (D)</span></div>
+          <div class="metric"><strong id="werI">0</strong><span>Extra (I)</span></div>
+        </div>
+        <div id="werTokens" class="tokens"></div>
+      </div>
+
+      <div id="werLogBox" class="hidden">
+        <table>
+          <thead><tr><th>#</th><th>Condition</th><th>Reference</th><th>Heard</th><th>WER</th></tr></thead>
+          <tbody id="werLogBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const mainScroll = document.getElementById("mainScroll");
+    const welcomeView = document.getElementById("welcomeView");
+    const messagesList = document.getElementById("messagesList");
+    const chatForm = document.getElementById("chatForm");
+    const cmdInput = document.getElementById("cmdInput");
+    const micBtn = document.getElementById("micBtn");
+    const sendBtn = document.getElementById("sendBtn");
+    const statusNote = document.getElementById("statusNote");
+    const accentSelect = document.getElementById("accentSelect");
+
+    let isRecording = false;
+    let audioCtx = null;
+    let mediaStream = null;
+    let processorNode = null;
+    let recordedChunks = [];
+    let recordTimer = null;
+    let recordStartMs = 0;
+    let activeAudio = null;
+    let lastWerResult = null;
+    const werLogs = [];
+
+    async function loadStatus() {
+      try {
+        const res = await fetch("/api/status");
+        const data = await res.json();
+        const tag = document.getElementById("modeTag");
+        tag.textContent = data.mode === "local_windows" ? "Local Windows" : "Cloud Demo";
+        if (data.mode === "local_windows") tag.classList.add("local");
+
+        const select = document.getElementById("werPhraseSelect");
+        data.wer_benchmark_phrases.forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p;
+          opt.textContent = p;
+          select.appendChild(opt);
+        });
+      } catch {
+        document.getElementById("modeTag").textContent = "Offline";
+      }
+    }
+    loadStatus();
+
+    function appendUserBubble(text) {
+      welcomeView.classList.add("hidden");
+      messagesList.classList.remove("hidden");
+      const div = document.createElement("div");
+      div.className = "msg-user";
+      div.textContent = text;
+      messagesList.appendChild(div);
+      mainScroll.scrollTop = mainScroll.scrollHeight;
+      return div;
+    }
+
+    function appendDetailRow(parent, label, text) {
+      const row = document.createElement("div");
+      const strong = document.createElement("strong");
+      strong.textContent = label + ": ";
+      row.appendChild(strong);
+      row.appendChild(document.createTextNode(text));
+      parent.appendChild(row);
+    }
+
+    function appendAssistantReply(data, userBubbleEl) {
+      if (userBubbleEl && data.asr && data.asr.success) {
+        userBubbleEl.textContent = data.asr.transcript;
+        if (data.audio) document.getElementById("werHyp").value = data.asr.transcript;
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "msg-assistant";
+
+      const avatar = document.createElement("span");
+      avatar.className = "sparkle";
+      avatar.textContent = "✦";
+
+      const body = document.createElement("div");
+      body.className = "msg-body";
+
+      const replyP = document.createElement("p");
+      replyP.className = "reply-text";
+      const exec = data.execution || {};
+      replyP.textContent = exec.reply_text || "Done.";
+      body.appendChild(replyP);
+
+      const actionRow = document.createElement("div");
+      actionRow.className = "action-row";
+
+      if (exec.target_url) {
+        const link = document.createElement("a");
+        link.className = "action-chip link";
+        link.href = exec.target_url;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = "↗ Open link";
+        actionRow.appendChild(link);
+        window.open(exec.target_url, "_blank", "noopener");
+      } else if (exec.status) {
+        const statusChip = document.createElement("span");
+        statusChip.className = "action-chip " + (exec.simulated ? "sim" : (exec.action_type === "error" || exec.action_type === "unknown" ? "" : "ok"));
+        statusChip.textContent = (exec.simulated ? "☁️ " : "✓ ") + exec.status;
+        actionRow.appendChild(statusChip);
+      }
+
+      if (data.tts && data.tts.success && data.tts.audio_base64) {
+        const src = `data:${data.tts.mime_type};base64,${data.tts.audio_base64}`;
+        const playBtn = document.createElement("button");
+        playBtn.type = "button";
+        playBtn.className = "action-chip";
+        playBtn.textContent = "🔊 Replay";
+        playBtn.addEventListener("click", () => {
+          if (activeAudio) activeAudio.pause();
+          activeAudio = new Audio(src);
+          activeAudio.play().catch(() => {});
+        });
+        actionRow.appendChild(playBtn);
+
+        if (activeAudio) activeAudio.pause();
+        activeAudio = new Audio(src);
+        activeAudio.play().catch(() => {});
+      }
+
+      if (actionRow.children.length) body.appendChild(actionRow);
+
+      // Compact collapsible case-study trace (hidden by default so UI stays Gemini-minimal)
+      const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      toggleBtn.className = "details-toggle";
+      toggleBtn.textContent = "View pipeline details ▾";
+
+      const detailsDiv = document.createElement("div");
+      detailsDiv.className = "pipeline-details hidden";
+      if (data.audio) {
+        appendDetailRow(detailsDiv, "Audio Input", `${data.audio.duration_sec}s · ${data.audio.sample_rate_hz} Hz · ${data.audio.db_fs} dBFS (${data.audio.quality_label})`);
+      }
+      if (data.asr) {
+        appendDetailRow(detailsDiv, "Speech Recognition", `${data.asr.engine} (${data.asr.latency_ms} ms)`);
+      }
+      if (data.nlp) {
+        const ents = Object.entries(data.nlp.entities || {}).map(([k, v]) => `${k}=${v}`).join(", ") || "none";
+        appendDetailRow(detailsDiv, "Language Processing", `${data.nlp.intent_label} · ${Math.round(data.nlp.confidence * 100)}% confidence · slots: ${ents} (${data.nlp.latency_ms} ms)`);
+      }
+      if (data.tts && data.tts.success) {
+        appendDetailRow(detailsDiv, "Speech Synthesis", `${data.tts.engine} (${data.tts.latency_ms} ms)`);
+      }
+
+      toggleBtn.addEventListener("click", () => {
+        const hidden = detailsDiv.classList.toggle("hidden");
+        toggleBtn.textContent = hidden ? "View pipeline details ▾" : "Hide pipeline details ▴";
+        mainScroll.scrollTop = mainScroll.scrollHeight;
+      });
+
+      body.appendChild(toggleBtn);
+      body.appendChild(detailsDiv);
+      wrap.appendChild(avatar);
+      wrap.appendChild(body);
+      messagesList.appendChild(wrap);
+      mainScroll.scrollTop = mainScroll.scrollHeight;
+    }
+
+    async function runTextCommand(cmd) {
+      const text = cmd.trim();
+      if (!text) return;
+      appendUserBubble(text);
+      cmdInput.value = "";
+      statusNote.textContent = "Thinking...";
+      sendBtn.disabled = true;
+      micBtn.disabled = true;
+
+      try {
+        const res = await fetch("/api/text-command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, speak: true }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Request failed");
+        appendAssistantReply(data, null);
+        statusNote.textContent = "Click 🎤 to speak or type a command.";
+      } catch (err) {
+        statusNote.textContent = "Error: " + err.message;
+      } finally {
+        sendBtn.disabled = false;
+        micBtn.disabled = false;
+      }
+    }
+
+    chatForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      runTextCommand(cmdInput.value);
+    });
+
+    document.querySelectorAll(".suggestion-card").forEach((btn) => {
+      btn.addEventListener("click", () => runTextCommand(btn.getAttribute("data-cmd")));
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      messagesList.innerHTML = "";
+      messagesList.classList.add("hidden");
+      welcomeView.classList.remove("hidden");
+      statusNote.textContent = "Click 🎤 to speak or type a command.";
+    });
+
+    // Browser 16 kHz mono WAV capture (no ffmpeg required)
+    function encodeWav16k(chunks, inputSampleRate) {
+      let totalLength = 0;
+      chunks.forEach((c) => totalLength += c.length);
+      const merged = new Float32Array(totalLength);
+      let offset = 0;
+      chunks.forEach((c) => { merged.set(c, offset); offset += c.length; });
+
+      const targetRate = 16000;
+      let samples = merged;
+      if (inputSampleRate !== targetRate) {
+        const ratio = inputSampleRate / targetRate;
+        const newLen = Math.round(merged.length / ratio);
+        samples = new Float32Array(newLen);
+        for (let i = 0; i < newLen; i++) {
+          const idx = i * ratio;
+          const lo = Math.floor(idx);
+          const hi = Math.min(lo + 1, merged.length - 1);
+          const frac = idx - lo;
+          samples[i] = merged[lo] * (1 - frac) + merged[hi] * frac;
+        }
+      }
+
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+      const writeStr = (pos, str) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(pos + i, str.charCodeAt(i));
+      };
+
+      writeStr(0, "RIFF");
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeStr(8, "WAVE");
+      writeStr(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, targetRate, true);
+      view.setUint32(28, targetRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, "data");
+      view.setUint32(40, samples.length * 2, true);
+
+      let bytePos = 44;
+      for (let i = 0; i < samples.length; i++) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(bytePos, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        bytePos += 2;
+      }
+      return new Blob([buffer], { type: "audio/wav" });
+    }
+
+    async function startRecording() {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtx.createMediaStreamSource(mediaStream);
+        processorNode = audioCtx.createScriptProcessor(4096, 1, 1);
+        recordedChunks = [];
+
+        processorNode.onaudioprocess = (e) => {
+          recordedChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+        };
+
+        source.connect(processorNode);
+        processorNode.connect(audioCtx.destination);
+
+        isRecording = true;
+        micBtn.classList.add("recording");
+        recordStartMs = Date.now();
+        micBtn.textContent = "⏹ 0.0s";
+        statusNote.textContent = "Listening... speak clearly, then click Stop.";
+        recordTimer = setInterval(() => {
+          const secs = ((Date.now() - recordStartMs) / 1000).toFixed(1);
+          micBtn.textContent = `⏹ ${secs}s`;
+        }, 100);
+      } catch {
+        statusNote.textContent = "Microphone unavailable — type your command instead.";
+      }
+    }
+
+    async function stopRecording() {
+      clearInterval(recordTimer);
+      isRecording = false;
+      micBtn.classList.remove("recording");
+      micBtn.textContent = "🎤";
+
+      const sampleRate = audioCtx ? audioCtx.sampleRate : 16000;
+      if (processorNode) processorNode.disconnect();
+      if (mediaStream) mediaStream.getTracks().forEach((t) => t.stop());
+      if (audioCtx) await audioCtx.close();
+
+      const wavBlob = encodeWav16k(recordedChunks, sampleRate);
+      const userBubble = appendUserBubble("🎤 Voice command...");
+      const form = new FormData();
+      form.append("file", wavBlob, "command.wav");
+      form.append("language", accentSelect.value);
+
+      micBtn.disabled = true;
+      sendBtn.disabled = true;
+      statusNote.textContent = "Recognizing speech...";
+
+      try {
+        const res = await fetch("/api/voice-command", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Voice request failed");
+        if (!data.asr || !data.asr.success) userBubble.textContent = "🎤 (Unrecognized audio)";
+        appendAssistantReply(data, userBubble);
+        statusNote.textContent = "Click 🎤 to speak or type a command.";
+      } catch (err) {
+        userBubble.textContent = "🎤 (Audio error)";
+        statusNote.textContent = "Error: " + err.message;
+      } finally {
+        micBtn.disabled = false;
+        sendBtn.disabled = false;
+      }
+    }
+
+    micBtn.addEventListener("click", () => {
+      if (!isRecording) startRecording();
+      else stopRecording();
+    });
+
+    // WER Modal Controls
+    const werModal = document.getElementById("werModal");
+    document.getElementById("openWerBtn").addEventListener("click", () => werModal.classList.remove("hidden"));
+    document.getElementById("closeWerBtn").addEventListener("click", () => werModal.classList.add("hidden"));
+    werModal.addEventListener("click", (e) => {
+      if (e.target === werModal) werModal.classList.add("hidden");
+    });
+    document.getElementById("werPhraseSelect").addEventListener("change", (e) => {
+      if (e.target.value) document.getElementById("werRef").value = e.target.value;
+    });
+
+    async function calculateWer() {
+      const reference = document.getElementById("werRef").value.trim();
+      const hypothesis = document.getElementById("werHyp").value.trim();
+      if (!reference) {
+        alert("Enter what you actually said (Reference).");
+        return;
+      }
+      const res = await fetch("/api/wer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference, hypothesis }),
+      });
+      const wer = await res.json();
+      if (!res.ok) return alert(wer.detail || "Could not compute WER");
+
+      lastWerResult = wer;
+      document.getElementById("werResultBox").classList.remove("hidden");
+      document.getElementById("werPct").textContent = wer.wer_percent + "%";
+      document.getElementById("werAcc").textContent = wer.word_accuracy_percent + "%";
+      document.getElementById("werS").textContent = wer.substitutions;
+      document.getElementById("werD").textContent = wer.deletions;
+      document.getElementById("werI").textContent = wer.insertions;
+
+      const row = document.getElementById("werTokens");
+      row.innerHTML = "";
+      wer.alignment.forEach((tok) => {
+        const span = document.createElement("span");
+        span.className = "tok op-" + tok.op;
+        span.textContent = tok.op === "match" ? tok.ref : tok.op === "sub" ? `${tok.ref} → ${tok.hyp}` : tok.op === "del" ? tok.ref : `+ ${tok.hyp}`;
+        row.appendChild(span);
+      });
+    }
+
+    document.getElementById("calcWerBtn").addEventListener("click", calculateWer);
+
+    document.getElementById("saveWerBtn").addEventListener("click", async () => {
+      if (!lastWerResult) await calculateWer();
+      if (!lastWerResult) return;
+
+      werLogs.push({ condition: document.getElementById("werCondition").value, ...lastWerResult });
+      document.getElementById("werLogBox").classList.remove("hidden");
+      const tbody = document.getElementById("werLogBody");
+      tbody.innerHTML = "";
+      werLogs.forEach((item, i) => {
+        const tr = document.createElement("tr");
+        [i + 1, item.condition, item.reference_clean, item.hypothesis_clean || "(empty)", item.wer_percent + "%"].forEach((val) => {
+          const td = document.createElement("td");
+          td.textContent = String(val);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    });
+
+    document.getElementById("csvBtn").addEventListener("click", () => {
+      if (!werLogs.length) return alert("Save at least one test run first.");
+      const header = "Run,Condition,Reference,Hypothesis,S,D,I,N,WER_Percent";
+      const rows = werLogs.map((r, i) => [i + 1, `"${r.condition}"`, `"${r.reference_clean}"`, `"${r.hypothesis_clean}"`, r.substitutions, r.deletions, r.insertions, r.total_ref_words, r.wer_percent].join(","));
+      const blob = new Blob([[header, ...rows].join("\n")], { type: "text/csv" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "wer_evaluation_results.csv";
+      a.click();
+    });
+  </script>
+</body>
+</html>
